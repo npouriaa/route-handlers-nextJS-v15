@@ -65,3 +65,24 @@ export const PUT = async (request: Request, { params }: ParamsType) => {
   // Returning the updated user as JSON
   return Response.json(users[index]);
 };
+
+export const DELETE = async (request: Request, { params }: ParamsType) => {
+  const { id } = await params; // Extracting user ID from the request parameters
+  const index = users.findIndex((user) => user.id === +id); // Finding the index of the user with the given ID
+
+  // If user is not found, return a 404 response
+  if (index === -1) {
+    return new Response(JSON.stringify({ error: "User not found" }), {
+      status: 404,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+  }
+
+  const deletedUser = users[index]; // Storing the user to return after deletion
+  users.splice(index, 1); // Removing the user from the array
+
+  // Returning the deleted user as a JSON response
+  return Response.json(deletedUser);
+};

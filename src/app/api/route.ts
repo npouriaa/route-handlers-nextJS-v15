@@ -1,8 +1,27 @@
+import { NextRequest } from "next/server"; // Importing Next.js request type for handling API requests
 import { users, UserType } from "../data"; // Importing user data and type definition
 
-// GET request handler: Returns the list of all users
-export const GET = async () => {
-  return new Response(JSON.stringify(users)); // Responding with the entire users array as JSON
+// GET request handler: Returns the list of users, optionally filtered by a search query
+export const GET = async (request: NextRequest) => {
+  const searchParams = request.nextUrl.searchParams; // Extracting search parameters from the request URL
+  const query = searchParams.get("query"); // Retrieving the "query" parameter from the request
+
+  // Filtering users based on the query if it exists
+  const filteredUsers = query
+    ? users.filter(
+        (user) =>
+          user.fullName.toLowerCase().includes(query) || // Matching full name (case-insensitive)
+          user.age.toString().includes(query) || // Matching age (as a string)
+          user.job.toLowerCase().includes(query) // Matching job title (case-insensitive)
+      )
+    : users; // If no query is provided, return the full list of users
+
+  // Returning the filtered list of users as a JSON response
+  return new Response(JSON.stringify(filteredUsers), {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 };
 
 // POST request handler: Adds a new user to the users list
