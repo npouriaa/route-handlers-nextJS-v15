@@ -1,24 +1,28 @@
-"use client";
-import { UserType } from "@/app/data";
-import { FormEvent, useEffect, useState } from "react";
+"use client"; // Enables client-side rendering in Next.js
+
+import { UserType } from "@/app/data"; // Importing the UserType definition
+import { FormEvent, useEffect, useState } from "react"; // Importing hooks
 
 const DataTable = () => {
+  // State management for users, loading, and errors
   const [users, setUsers] = useState<UserType[]>([] as UserType[]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
+  // State for user form fields
   const [userId, setUserId] = useState<number>(0);
   const [fullName, setFullName] = useState<string>("");
   const [age, setAge] = useState<number>(1);
   const [job, setJob] = useState<string>("");
 
-  const [updateMode, setUpdateMode] = useState<boolean>(false);
+  const [updateMode, setUpdateMode] = useState<boolean>(false); // Determines if update mode is active
 
+  // Fetch all users from the API
   const fetchData = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("http://localhost:3000/api");
+      const response = await fetch("http://localhost:3000/api"); // Fetching users
       const data = await response.json();
       setUsers(data);
     } catch (err) {
@@ -28,6 +32,7 @@ const DataTable = () => {
     setLoading(false);
   };
 
+  // Search for users based on query string
   const searchUsers = async (query: string) => {
     setLoading(true);
     setError("");
@@ -42,8 +47,9 @@ const DataTable = () => {
     setLoading(false);
   };
 
+  // Add a new user to the API
   const addNewUser = async (e: FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission
     setUpdateMode(false);
     setLoading(true);
     setError("");
@@ -63,8 +69,8 @@ const DataTable = () => {
         body: object,
       });
 
-      fetchData();
-      setFullName("");
+      fetchData(); // Refresh user list
+      setFullName(""); // Reset form fields
       setAge(1);
       setJob("");
     } catch (err) {
@@ -74,6 +80,7 @@ const DataTable = () => {
     setLoading(false);
   };
 
+  // Delete a user by ID
   const deleteUser = async (id: number) => {
     setLoading(true);
     setError("");
@@ -86,7 +93,7 @@ const DataTable = () => {
         },
       });
 
-      fetchData();
+      fetchData(); // Refresh user list
     } catch (err) {
       setError((err as Error).message);
       console.log((err as Error).message);
@@ -94,8 +101,9 @@ const DataTable = () => {
     setLoading(false);
   };
 
+  // Update an existing user by ID
   const updateUser = async (e: FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission
 
     try {
       const object = JSON.stringify({
@@ -112,12 +120,13 @@ const DataTable = () => {
         body: object,
       });
 
-      fetchData();
+      fetchData(); // Refresh user list
     } catch (err) {
       setError((err as Error).message);
       console.log((err as Error).message);
     }
 
+    // Reset form fields and update mode
     setUpdateMode(false);
     setUserId(0);
     setFullName("");
@@ -125,12 +134,14 @@ const DataTable = () => {
     setJob("");
   };
 
+  // Fetch users on initial render
   useEffect(() => {
     fetchData();
   }, []);
 
   return (
     <div className="flex items-start p-2 gap-4 flex-col w-185">
+      {/* Form for adding or updating users */}
       <form
         onSubmit={(e) => (updateMode ? updateUser(e) : addNewUser(e))}
         className="w-full flex justify-between gap-3 border-b border-gray-200 py-4"
@@ -165,18 +176,24 @@ const DataTable = () => {
           {updateMode ? "Update" : "Add"} user
         </button>
       </form>
+
+      {/* Button to refresh user list */}
       <button
         className="cursor-pointer bg-gray-300 p-1 rounded-md"
         onClick={() => fetchData()}
       >
         Refresh table
       </button>
+
+      {/* Search input */}
       <input
         type="text"
         className="border w-full p-2 border-gray-200 rounded-md"
         placeholder="Search...."
         onChange={(e) => searchUsers(e.target.value)}
       />
+
+      {/* Display loading, error, or users */}
       {loading ? (
         <p>Loading...</p>
       ) : error ? (
@@ -189,7 +206,7 @@ const DataTable = () => {
               <th>Full Name</th>
               <th>Age</th>
               <th>Job</th>
-              <th>actions</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -204,6 +221,7 @@ const DataTable = () => {
                   <td>{user.age}</td>
                   <td className="capitalize">{user.job}</td>
                   <td>
+                    {/* Button to enable update mode and populate form fields */}
                     <button
                       onClick={() => {
                         setUpdateMode(true);
@@ -216,6 +234,7 @@ const DataTable = () => {
                     >
                       Update
                     </button>
+                    {/* Button to delete user */}
                     <button
                       onClick={() => deleteUser(user.id)}
                       className="cursor-pointer bg-red-500 text-white p-1 rounded-md m-2 "
