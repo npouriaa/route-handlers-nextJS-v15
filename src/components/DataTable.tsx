@@ -1,22 +1,24 @@
 "use client";
 import { UserType } from "@/app/data";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 const DataTable = () => {
   const [users, setUsers] = useState<UserType[]>([] as UserType[]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
+  const [userId, setUserId] = useState<number>(0);
   const [fullName, setFullName] = useState<string>("");
   const [age, setAge] = useState<number>(1);
   const [job, setJob] = useState<string>("");
+
+  const [updateMode, setUpdateMode] = useState<boolean>(false);
 
   const fetchData = async () => {
     setLoading(true);
     setError("");
     try {
       const response = await fetch("http://localhost:3000/api");
-      if (!response.ok) throw new Error("Failded to fetch users");
       const data = await response.json();
       setUsers(data);
     } catch (err) {
@@ -31,7 +33,6 @@ const DataTable = () => {
     setError("");
     try {
       const response = await fetch(`http://localhost:3000/api?query=${query}`);
-      if (!response.ok) throw new Error("Failded to fetch");
       const data = await response.json();
       setUsers(data);
     } catch (err) {
@@ -43,17 +44,18 @@ const DataTable = () => {
 
   const addNewUser = async (e: FormEvent) => {
     e.preventDefault();
+    setUpdateMode(false);
     setLoading(true);
     setError("");
 
-    const object = JSON.stringify({
-      fullName: fullName,
-      age: age,
-      job: job,
-    });
-
     try {
-      const response = await fetch("http://localhost:3000/api", {
+      const object = JSON.stringify({
+        fullName: fullName,
+        age: age,
+        job: job,
+      });
+
+      await fetch("http://localhost:3000/api", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -61,7 +63,6 @@ const DataTable = () => {
         body: object,
       });
 
-      if (!response.ok) throw new Error("Failded to post user");
       fetchData();
       setFullName("");
       setAge(1);
@@ -73,25 +74,55 @@ const DataTable = () => {
     setLoading(false);
   };
 
-  const deleteUser = async (id: string) => {
+  const deleteUser = async (id: number) => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch(`http://localhost:3000/api/${id}`, {
+      await fetch(`http://localhost:3000/api/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
         },
       });
 
-      if (!response.ok) throw new Error("Failded to delete user");
       fetchData();
     } catch (err) {
       setError((err as Error).message);
       console.log((err as Error).message);
     }
     setLoading(false);
+  };
+
+  const updateUser = async (e: FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const object = JSON.stringify({
+        fullName: fullName,
+        age: age,
+        job: job,
+      });
+
+      await fetch(`http://localhost:3000/api/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: object,
+      });
+
+      fetchData();
+    } catch (err) {
+      setError((err as Error).message);
+      console.log((err as Error).message);
+    }
+
+    setUpdateMode(false);
+    setUserId(0);
+    setFullName("");
+    setAge(0);
+    setJob("");
   };
 
   useEffect(() => {
@@ -101,7 +132,7 @@ const DataTable = () => {
   return (
     <div className="flex items-start p-2 gap-4 flex-col w-185">
       <form
-        onSubmit={(e) => addNewUser(e)}
+        onSubmit={(e) => (updateMode ? updateUser(e) : addNewUser(e))}
         className="w-full flex justify-between gap-3 border-b border-gray-200 py-4"
       >
         <input
@@ -131,7 +162,7 @@ const DataTable = () => {
           value={job}
         />
         <button className="cursor-pointer bg-green-500 text-white p-1 rounded-md">
-          Add user
+          {updateMode ? "Update" : "Add"} user
         </button>
       </form>
       <button
@@ -173,17 +204,23 @@ const DataTable = () => {
                   <td>{user.age}</td>
                   <td className="capitalize">{user.job}</td>
                   <td>
-                    <button className="cursor-pointer bg-yellow-400 text-white p-1 rounded-md mx-2">
+                    <button
+                      onClick={() => {
+                        setUpdateMode(true);
+                        setUserId(user.id);
+                        setFullName(user.fullName);
+                        setAge(user.age);
+                        setJob(user.job);
+                      }}
+                      className="cursor-pointer bg-yellow-400 text-white p-1 rounded-md m-2"
+                    >
                       Update
                     </button>
                     <button
-                      onClick={() => deleteUser(user.id + "")}
-                      className="cursor-pointer bg-red-500 text-white p-1 rounded-md mx-2 "
+                      onClick={() => deleteUser(user.id)}
+                      className="cursor-pointer bg-red-500 text-white p-1 rounded-md m-2 "
                     >
                       Delete
-                    </button>
-                    <button className="cursor-pointer bg-blue-500 text-white p-1 rounded-md mx-2 ">
-                      Update job only
                     </button>
                   </td>
                 </tr>
